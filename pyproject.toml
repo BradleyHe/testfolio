@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "testfolio"
-version = "0.1.1"
+version = "0.1.2"
 description = "Quick portfolio backtesting using historical market data"
 authors = ["Bradley He <bhe6001@gmail.com>"]
 repository = "https://github.com/BradleyHe/testfolio"

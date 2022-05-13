@@ -20,9 +20,7 @@ $ pip install testfolio -U
 - [Numpy](http://www.numpy.org) \>= 1.11.1
 - [requests](http://docs.python-requests.org/en/master/) \>= 2.14.2
 - [lxml](https://pypi.org/project/lxml/) \>= 4.5.1
-
-### Optional
-- [Matplotlib](https://matplotlib.org/) is used to graph backtesting data, but is not needed for core functionality
+- [Matplotlib](https://matplotlib.org/)
 
 ### Example Usage
 #### Creating a backtest
