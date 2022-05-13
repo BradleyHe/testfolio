@@ -8,8 +8,9 @@ Backtest your portfolio allocations using historical market data from Yahoo Fina
 
 ## Quick Start
 ### Installation
+You can install **testfolio** using pip:
 ``` {.sourceCode .bash}
-$ pip install testfolio 
+$ pip install testfolio -U
 ```
 
 ### Requirements
