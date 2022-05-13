@@ -138,6 +138,6 @@ tsf.graph_drawdown(backtest_1, backtest_2)
 ```
 
 #### Output
-![returns](example/returns.png)
-![drawdowns](example/drawdowns.png)
+![returns](https://github.com/BradleyHe/testfolio/blob/main/example/returns.png)
+![drawdowns](https://github.com/BradleyHe/testfolio/raw/main/example/drawdowns.png)
 
