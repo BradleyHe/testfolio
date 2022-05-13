@@ -1,4 +1,9 @@
 # testfolio
+<a target="new" href="https://pypi.org/pypi/testfolio"><img border=0 src="https://img.shields.io/pypi/pyversions/testfolio"></a>
+<a target="new" href="https://pypi.org/pypi/testfolio"><img border=0 src="https://img.shields.io/pypi/dm/testfolio"></a>
+<a target="new" href="https://pypi.org/pypi/testfolio"><img border=0 src="https://img.shields.io/pypi/v/testfolio"></a>
+<a target="new" href="https://www.codefactor.io/repository/github/bradleyhe/testfolio"><img border=0 src="https://img.shields.io/codefactor/grade/github/BradleyHe/testfolio"></a>
+
 Backtest your portfolio allocations using historical market data from Yahoo Finance.
 
 ## Quick Start
