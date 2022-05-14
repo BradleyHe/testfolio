@@ -20,7 +20,7 @@ $ pip install testfolio -U
 - [Numpy](http://www.numpy.org) \>= 1.11.1
 - [requests](http://docs.python-requests.org/en/master/) \>= 2.14.2
 - [lxml](https://pypi.org/project/lxml/) \>= 4.5.1
-- [Matplotlib](https://matplotlib.org/)
+- [Matplotlib](https://matplotlib.org/) \>= 3.5.0
 
 ### Example Usage
 #### Creating a backtest
@@ -51,6 +51,7 @@ Maximum Drawdown: -27.87%
 STD (annualized): 8.95%
 Sharpe Ratio: 0.81
 Sortino Ratio: 1.23
+Market Correlation: 0.81
 -----------------------------------------------
 ```
 
@@ -119,6 +120,9 @@ backtest.sharpe
 
 # Sortino ratio (using 3 month T-Bill as risk free asset)
 backtest.sortino
+
+# Pearson correlation coefficient with the S&P 500
+backtest.correlation
 ```
 
 

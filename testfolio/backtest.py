@@ -35,7 +35,7 @@ class Backtest(object):
         tickers: List of strings containing tickers in the backtest.
         start_date: String representing the start date of the backtest. Defaults to the earliest possible date for which
                     data for all tickers is available, if not specified.
-        end_date: Ending date of the backtest. Defaults to today if not specified.
+        end_date: Ending date of the backtest. Defaults to today if not specified
         hist: DataFrame containing the value of the portfolio every month. Columns include each of the
                         tickers, the total portfolio value, and drawdown.
         max_drawdown: Maximum drawdown of the portfolio.
@@ -44,6 +44,7 @@ class Backtest(object):
         std: Annualized standard deviation of returns.
         sharpe: Sharpe ratio calculated using the 3-month T-Bill as the risk-free return.
         sortino: Sortino ratio calculated using the 3-month T-Bill as the risk-free return.
+        correlation: Pearson correlation coefficient to the S&P 500 over the time period.
     """
 
     _portfolio_num = 1
@@ -144,10 +145,16 @@ class Backtest(object):
         # Calculate excess return using 3-month T-Bill as risk-free return
         tbill_return = yf.download('^IRX', interval='1mo', start=self.start_date, end=self.end_date,
                                    progress=False)['Close'] * 0.01 / 12  # Don't forget to convert to monthly rate
-        portfolio_return = hist['Total'].pct_change()
+        portfolio_return = hist['Total'].pct_change().dropna()
         excess_return = (portfolio_return - tbill_return).dropna()
         self.sharpe = _sharpe(excess_return)
         self.sortino = _sortino(excess_return)
+
+        # Calculate market correlation using S&P 500
+        market_history = yf.download('VFINX', interval='1mo', start=self.start_date,
+                                     progress=False)['Adj Close'].dropna().pct_change().dropna()
+        df = pd.concat([portfolio_return, market_history], axis=1)
+        self.correlation = df.corr().iloc[1][0]
 
     def __str__(self):
         return (
@@ -163,5 +170,6 @@ class Backtest(object):
             f'STD (annualized): {self.std:.2%}\n'
             f'Sharpe Ratio: {self.sharpe:.2f}\n'
             f'Sortino Ratio: {self.sortino:.2f}\n'
+            f'Market Correlation: {self.correlation:.2f}\n'
             '-----------------------------------------------\n'
         )
