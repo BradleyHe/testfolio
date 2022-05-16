@@ -4,10 +4,12 @@ import matplotlib.ticker as ticker
 
 # A group of functions that may be helpful in visualizing backtests.
 
+# TODO: Add interactive mode option so that users can choose to see the plot or save it as an image.
 
 def graph_return(*backtests,
                  start_val=None,
-                 logarithmic=False):
+                 logarithmic=False,
+                 path=None):
     """ Graphs the cumulative return of any number of backtests.
 
     Retrieves the total portfolio value of each backtest over time and graphs it. The latest start date
@@ -17,6 +19,7 @@ def graph_return(*backtests,
         *backtests: Any number of Backtest objects to be graphed.
         start_val: The starting portfolio value for each backtest. Set to None if relative return is desired.
         logarithmic: Y-axis will be logarithmic if True, linear if False.
+        path: File path to save the graph as a picture in the working directory. Defaults to None for interactive mode.
     """
 
     data = []
@@ -46,16 +49,21 @@ def graph_return(*backtests,
     if start_val:
         ax.yaxis.set_major_formatter(ticker.StrMethodFormatter('${x:,.0f}'))
         ax.yaxis.set_minor_formatter(ticker.StrMethodFormatter('${x:,.0f}'))
-        plt.ylabel('Value')
+        ax.set_ylabel('Value')
     else:
-        plt.ylabel('Return')
+        ax.set_ylabel('Return')
 
-    plt.margins(x=0)
-    plt.title("Portfolio Returns")
-    plt.show()
+    ax.margins(x=0)
+    ax.set_title("Portfolio Returns")
+
+    if path:
+        plt.savefig(path)
+    else:
+        plt.show()
+    plt.close()
 
 
-def graph_drawdown(*backtests):
+def graph_drawdown(*backtests, path=None):
     """ Graphs the drawdowns of any number of backtests.
 
     Retrieves the drawdowns of each backtest over time and graphs it. The latest start date encompassing the entirety of
@@ -65,6 +73,7 @@ def graph_drawdown(*backtests):
 
     Args:
         *backtests: Any number of Backtest objects to be graphed.
+        path: File path to save the graph as a picture in the working directory. Defaults to None for interactive mode.
     """
 
     data = []
@@ -77,7 +86,16 @@ def graph_drawdown(*backtests):
     df = pd.concat(data, axis=1, keys=headers)
     df = df.dropna()
 
-    df.plot(figsize=(10, 5), kind='line')
-    plt.margins(x=0, y=0)
-    plt.title("Portfolio Drawdowns")
-    plt.show()
+    ax = df.plot(figsize=(10, 5), kind='line')
+    ax.set_ylabel("Drawdown")
+    ax.margins(x=0, y=0)
+    ax.set_title("Portfolio Drawdowns")
+
+    if path:
+        plt.savefig(path)
+    else:
+        plt.show()
+    plt.close()
+
+
+

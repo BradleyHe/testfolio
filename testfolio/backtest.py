@@ -57,7 +57,8 @@ class Backtest(object):
             end_date=None,
             start_val=1000,
             invest_dividends=True,
-            name=None
+            name=None,
+            adj_inflation=False
     ) -> None:
         if abs(sum(allocation.values()) - 1) >= 1e-6:
             raise ValueError('Allocation percentages must sum to 1.')
@@ -104,10 +105,10 @@ class Backtest(object):
         self.end_date = prices.index[-1].strftime('%Y-%m-%d')
 
         # Divide each row by the one above it to find percent change
-        daily_change = prices / prices.shift(1)
+        monthly_change = prices / prices.shift(1)
 
         # Initialize starting values
-        hist = pd.DataFrame(index=daily_change.index, columns=self.tickers + ['Total', 'Drawdown'])
+        hist = pd.DataFrame(index=monthly_change.index, columns=self.tickers + ['Total', 'Drawdown'])
         for ticker in self.tickers:
             hist.at[self.start_date, ticker] = self.allocation[ticker] * self.start_val
         hist.at[self.start_date, 'Total'] = self.start_val
@@ -116,7 +117,7 @@ class Backtest(object):
         # Populate portfolio history
         prev_date = self.start_date
         max_total = self.start_val
-        for date, row in daily_change.iloc[1:].iterrows():
+        for date, row in monthly_change.iloc[1:].iterrows():
             for ticker in self.tickers:
                 hist.at[date, ticker] = hist.at[prev_date, ticker] * row[ticker]
             hist.at[date, 'Total'] = hist.loc[date].sum()
