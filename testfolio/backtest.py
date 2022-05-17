@@ -116,7 +116,7 @@ class Backtest(object):
         monthly_change = prices / prices.shift(1)
 
         # Initialize starting values
-        hist = pd.DataFrame(index=monthly_change.index, columns=self.tickers + ['Total', 'Real Total', 'Drawdown'])
+        hist = pd.DataFrame(index=monthly_change.index, columns=self.tickers + ['Total', 'Drawdown'])
         for ticker in self.tickers:
             hist.at[self.start_date, ticker] = self.allocation[ticker] * self.start_val
         hist.at[self.start_date, 'Total'] = self.start_val
