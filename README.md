@@ -4,7 +4,7 @@
 <a target="new" href="https://pypi.org/pypi/testfolio"><img border=0 src="https://img.shields.io/pypi/v/testfolio"></a>
 <a target="new" href="https://www.codefactor.io/repository/github/bradleyhe/testfolio"><img border=0 src="https://img.shields.io/codefactor/grade/github/BradleyHe/testfolio"></a>
 
-Backtest your portfolio allocations using historical market data from Yahoo Finance.
+Backtest and visualize your portfolio allocations using historical market data from Yahoo Finance.
 
 ## Quick Start
 ### Installation
@@ -15,8 +15,8 @@ $ pip install testfolio -U
 
 ### Requirements
 **testfolio** depends on [yfinance](https://github.com/ranaroussi/yfinance) for retrieving market data; as such, the requirements match its requirements.
-- [Python](https://www.python.org) \>= 3.4+
-- [Pandas](https://github.com/pydata/pandas) \>= 0.23.1
+- [Python](https://www.python.org) \>= 3.6+
+- [Pandas](https://github.com/pydata/pandas) \>= 1.0.0
 - [Numpy](http://www.numpy.org) \>= 1.11.1
 - [requests](http://docs.python-requests.org/en/master/) \>= 2.14.2
 - [lxml](https://pypi.org/project/lxml/) \>= 4.5.1
@@ -80,7 +80,11 @@ backtest = Backtest(
             invest_dividends=False,
     
             # Set to "Portfolio n" where n is the nth portfolio made by default.
-            name='Example Portfolio')
+            name='Example Portfolio',
+            
+            # If True, adjusts all values and calculations to be real dollars based on the start date. Most recent 
+            # months may not be adjusted if inflation data is not available.
+            adj_inflation=False)
 ```
 Aliases for broad market indices are available as well, and are set to the below mapping:
 ```python

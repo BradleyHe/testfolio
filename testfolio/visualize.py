@@ -4,7 +4,6 @@ import matplotlib.ticker as ticker
 
 # A group of functions that may be helpful in visualizing backtests.
 
-# TODO: Add interactive mode option so that users can choose to see the plot or save it as an image.
 
 def graph_return(*backtests,
                  start_val=None,

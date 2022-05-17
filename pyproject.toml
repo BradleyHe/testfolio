@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "testfolio"
-version = "0.1.3"
-description = "Quick portfolio backtesting using historical market data"
+version = "0.1.5"
+description = "Quick portfolio backtesting and visualization"
 authors = ["Bradley He <bhe6001@gmail.com>"]
 repository = "https://github.com/BradleyHe/testfolio"
 keywords = ["portfolio", "stock", "backtest", "finance", "market"]
@@ -20,6 +20,7 @@ classifiers = [
 python = "^3.6"
 yfinance = ">= 0.1.70"
 matplotlib = ">= 3.5.0"
+pandas-datareader = ">= 0.10.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

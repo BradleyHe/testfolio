@@ -1,6 +1,7 @@
 import yfinance as yf
 import pandas as pd
 import numpy as np
+import pandas_datareader.data as web
 from testfolio.utils import _cagr, _rebalance, _sharpe, _sortino
 
 REBALANCE_INTERVALS = ('m', 'q', 'y', 'no')
@@ -33,6 +34,9 @@ class Backtest(object):
         rebalance: String indicating the rebalancing frequency of the portfolio. Must be in REBALANCE_INTERVALS.
         start_val: Starting value of the portfolio. Defaults to 1000 if not specified.
         tickers: List of strings containing tickers in the backtest.
+        adj_inflation: True if prices are adjusted for inflation relative to start_date, False if prices are nominal
+            NOTE - Inflation data may not be available for the most recent month, in which case there will be no
+            adjustment for the most recent data point.
         start_date: String representing the start date of the backtest. Defaults to the earliest possible date for which
                     data for all tickers is available, if not specified.
         end_date: Ending date of the backtest. Defaults to today if not specified
@@ -81,6 +85,7 @@ class Backtest(object):
         self.rebalance = rebalance.lower()
         self.start_val = start_val
         self.tickers = list(allocation.keys())
+        self.adj_inflation = adj_inflation
 
         # Limit start date to 1985-01-01 at the earliest (T-Bill info unavailable before then)
         if start_date:
@@ -104,15 +109,21 @@ class Backtest(object):
         self.start_date = prices.index[0].strftime('%Y-%m-%d')
         self.end_date = prices.index[-1].strftime('%Y-%m-%d')
 
+        if self.start_date >= self.end_date:
+            raise ValueError('Time between start date and end date must be more than 1 month.')
+
         # Divide each row by the one above it to find percent change
         monthly_change = prices / prices.shift(1)
 
         # Initialize starting values
-        hist = pd.DataFrame(index=monthly_change.index, columns=self.tickers + ['Total', 'Drawdown'])
+        hist = pd.DataFrame(index=monthly_change.index, columns=self.tickers + ['Total', 'Real Total', 'Drawdown'])
         for ticker in self.tickers:
             hist.at[self.start_date, ticker] = self.allocation[ticker] * self.start_val
         hist.at[self.start_date, 'Total'] = self.start_val
         hist.at[self.start_date, 'Drawdown'] = 0
+
+        # Download inflation data if necessary
+        inflation = web.DataReader('CPIAUCSL', 'fred', self.start_date, self.end_date) if adj_inflation else None
 
         # Populate portfolio history
         prev_date = self.start_date
@@ -120,6 +131,11 @@ class Backtest(object):
         for date, row in monthly_change.iloc[1:].iterrows():
             for ticker in self.tickers:
                 hist.at[date, ticker] = hist.at[prev_date, ticker] * row[ticker]
+
+                # Adjust for inflation if necessary
+                if adj_inflation and date in inflation.index:
+                    hist.at[date, ticker] *= inflation.at[prev_date, 'CPIAUCSL'] / inflation.at[date, 'CPIAUCSL']
+
             hist.at[date, 'Total'] = hist.loc[date].sum()
 
             # Rebalancing
@@ -146,6 +162,9 @@ class Backtest(object):
         # Calculate excess return using 3-month T-Bill as risk-free return
         tbill_return = yf.download('^IRX', interval='1mo', start=self.start_date, end=self.end_date,
                                    progress=False)['Close'] * 0.01 / 12  # Don't forget to convert to monthly rate
+        if adj_inflation:
+            tbill_return -= inflation['CPIAUCSL'].pct_change()
+
         portfolio_return = hist['Total'].pct_change().dropna()
         excess_return = (portfolio_return - tbill_return).dropna()
         self.sharpe = _sharpe(excess_return)
@@ -156,6 +175,7 @@ class Backtest(object):
                                      progress=False)['Adj Close'].dropna().pct_change().dropna()
         df = pd.concat([portfolio_return, market_history], axis=1)
         self.correlation = df.corr().iloc[1][0]
+
 
     def __str__(self):
         return (
