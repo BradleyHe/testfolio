@@ -17,4 +17,4 @@ allocation_2 = {
 backtest_2 = tsf.Backtest(allocation_2, rebalance='q', name='Three Fund Portfolio')
 tsf.graph_return(backtest_1, backtest_2, start_val=1000, logarithmic=True, path='returns.png')
 tsf.graph_drawdown(backtest_1, backtest_2, path='drawdowns.png')
-
+tsf.graph_rolling_returns(backtest_1, backtest_2, interval=24, path='rolling_returns.png')

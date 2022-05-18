@@ -176,6 +176,29 @@ class Backtest(object):
         df = pd.concat([portfolio_return, market_history], axis=1)
         self.correlation = df.corr().iloc[1][0]
 
+    def get_rolling_returns(self, interval):
+        """Gets the annualized rolling returns of the backtest over a given interval length.
+
+        Args:
+            interval: Number of months for each interval. Must be shorter than the duration of the backtest itself.
+        Returns:
+            A pandas.Series object containing the annualized rolling returns of every possible interval. The index value for
+            each value corresponds to the end date of the interval it represents.
+        """
+
+        if interval >= len(self.hist.index):
+            raise ValueError('Interval must be shorter than the duration of the backtest.')
+        if interval <= 0:
+            raise ValueError('Interval must be at least 1 month long.')
+
+        returns = []
+
+        for i in range(interval, len(self.hist.index)):
+            start_date = self.hist.index[i - interval].strftime('%Y-%m-%d')
+            end_date = self.hist.index[i].strftime('%Y-%m-%d')
+            returns.append(_cagr(self.hist.iloc[i-interval]['Total'], self.hist.iloc[i]['Total'], start_date, end_date))
+
+        return pd.Series(data=returns, index=self.hist.index[interval:])
 
     def __str__(self):
         return (

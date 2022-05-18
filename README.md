@@ -102,7 +102,7 @@ ALIAS_TO_TICKER = {
     'US Mid Cap': 'VMCIX'
 }
 ```
-In addition to the attributes set during creation, Backtest objects have the following attributes:
+In addition to the attributes set during creation, Backtest objects have the following attributes and functions:
 ```python
 backtest = Backtest(allocation)
 
@@ -127,6 +127,9 @@ backtest.sortino
 
 # Pearson correlation coefficient with the S&P 500
 backtest.correlation
+
+# Returns a pandas.Series object containing rolling returns of the specified interval (e.g. 1 year)
+backtest.get_rolling_returns(12)
 ```
 
 
@@ -142,9 +145,11 @@ allocation_2 = {
 backtest_2 = tsf.Backtest(allocation_2, rebalance='q', name='Three Fund Portfolio')
 tsf.graph_return(backtest_1, backtest_2, start_val=1000, logarithmic=True, path='returns.png')
 tsf.graph_drawdown(backtest_1, backtest_2, path='drawdowns.png')
+tsf.graph_rolling_returns(backtest_1, backtest_2, interval=24, path='rolling_returns.png')
 ```
 
 #### Output
 ![returns](https://github.com/BradleyHe/testfolio/raw/main/example/returns.png)
 ![drawdowns](https://github.com/BradleyHe/testfolio/raw/main/example/drawdowns.png)
+![rolling_returns](https://github.com/BradleyHe/testfolio/raw/main/example/rolling_returns.png)
 
