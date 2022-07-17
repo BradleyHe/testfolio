@@ -111,7 +111,7 @@ def graph_rolling_returns(*backtests,
     """ Graphs the annualized rolling returns of any number of backtests over a given interval length.
 
     X-axis corresponds to the interval ending on that date. Y-axis is the annualized return of that interval. The
-    latest start date encompassing the entirety of every backtest will be used.
+    latest start date encompassing the entirety of every backtest will be used. Assumes 1 month = 21 trading days.
 
     Args:
         *backtests: Any number of Backtest objects to be graphed.
@@ -133,6 +133,7 @@ def graph_rolling_returns(*backtests,
     ax.grid(axis='y', which='major')
     ax.grid(axis='x', which='major')
     ax.hlines(y=0, xmin=df.index[0], xmax=df.index[-1], color='k', zorder=0)
+    ax.margins(x=0)
 
     ax.set_ylabel('Annualized Return')
     ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0))

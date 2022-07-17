@@ -1,5 +1,5 @@
 # testfolio
-<a target="new" href="https://pypi.org/pypi/testfolio"><img border=0 src="https://img.shields.io/pypi/pyversions/testfolio"></a>
+<a target="new" href="https://pypi.org/pypi/testfolio"><img border=0 src="https://img.shields.io/badge/python-3.6%2B-blue"></a>
 <a target="new" href="https://pypi.org/pypi/testfolio"><img border=0 src="https://img.shields.io/pypi/dm/testfolio"></a>
 <a target="new" href="https://pypi.org/pypi/testfolio"><img border=0 src="https://img.shields.io/pypi/v/testfolio"></a>
 <a target="new" href="https://www.codefactor.io/repository/github/bradleyhe/testfolio"><img border=0 src="https://img.shields.io/codefactor/grade/github/BradleyHe/testfolio"></a>
@@ -43,15 +43,15 @@ print(backtest_1)
 Name: 60/40 Portfolio
 Allocation: {'SPY': 0.6, 'TLT': 0.4}
 Starting Value: $1000.00
-Ending Value: $4889.48
-Start Date: 2002-08-01
-End Date: 2022-05-13
-CAGR: 8.35%
-Maximum Drawdown: -27.87%
-STD (annualized): 8.95%
-Sharpe Ratio: 0.81
-Sortino Ratio: 1.23
-Market Correlation: 0.81
+Ending Value: $5390.85
+Start Date: 2002-07-30
+End Date: 2022-07-15
+CAGR: 8.80%
+Maximum Drawdown: -30.48%
+STD (annualized): 10.32%
+Sharpe Ratio: 0.76
+Sortino Ratio: 1.08
+Market Correlation: 0.84
 -----------------------------------------------
 ```
 
@@ -61,8 +61,9 @@ backtest = Backtest(
             # Must be a dictionary with ticker keys corresponding to allocation percentages that sum to 1.
             allocation, 
     
-            # Portfolios are rebalanced quarterly by default. Other options include 'm' (monthly), 'y' (yearly), and 
-            # 'no' (no rebalancing)
+            # Portfolios are rebalanced quarterly by default. Other options include 'd' (daily), 'w' (weekly),
+            # 'm' (monthly), 'q' (quarterly), 'y' (yearly), and 'no' (no rebalancing). Rebalancing occurs on the first 
+            # day of the specified interval.
             rebalance='q', 
             
             # Must be in YYYY-mm-dd string format. Set to the earliest possible date when all tickers existed by 
@@ -103,12 +104,13 @@ ALIAS_TO_TICKER = {
 }
 ```
 In addition to the attributes set during creation, Backtest objects have the following attributes and functions:
+
 ```python
 backtest = Backtest(allocation)
 
 # pandas DataFrame containing the value of the portfolio every month. Columns include each of the tickers, the total 
 # portfolio value, and drawdown.
-backtest.hist 
+backtest.hist
 
 # Maximum drawdown 
 backtest.max_drawdown
@@ -116,7 +118,7 @@ backtest.max_drawdown
 # Compound annual growth rate 
 backtest.cagr
 
-# Annualized standard deviation of returns
+# Annualized standard deviation of daily returns
 backtest.std
 
 # Sharpe ratio (using 3 month T-Bill as risk free asset)

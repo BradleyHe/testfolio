@@ -2,9 +2,9 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 import pandas_datareader.data as web
-from testfolio.utils import _cagr, _rebalance, _sharpe, _sortino
+from testfolio.utils import _cagr, _rebalance, _sharpe, _sortino, _interpolate_inflation, _is_rebalance_date
 
-REBALANCE_INTERVALS = ('m', 'q', 'y', 'no')
+REBALANCE_INTERVALS = ('d', 'w', 'm', 'q', 'y', 'no')
 ALIAS_TO_TICKER = {
     'S&P 500': 'VFINX',
     'Long Term Treasury': 'VUSTX',
@@ -36,7 +36,7 @@ class Backtest(object):
         tickers: List of strings containing tickers in the backtest.
         adj_inflation: True if prices are adjusted for inflation relative to start_date, False if prices are nominal
             NOTE - Inflation data may not be available for the most recent month, in which case there will be no
-            adjustment for the most recent data point.
+            adjustment for the most recent data points.
         start_date: String representing the start date of the backtest. Defaults to the earliest possible date for which
                     data for all tickers is available, if not specified.
         end_date: Ending date of the backtest. Defaults to today if not specified
@@ -91,7 +91,7 @@ class Backtest(object):
         if start_date:
             start_date = max(start_date, '1985-01-01')
 
-        history = yf.download(self.tickers, interval='1mo', start=start_date, end=end_date, progress=False)
+        history = yf.download(self.tickers, interval='1d', start=start_date, end=end_date, progress=False)
         prices = history['Adj Close' if invest_dividends else 'Close']
 
         if len(self.tickers) == 1:
@@ -110,13 +110,13 @@ class Backtest(object):
         self.end_date = prices.index[-1].strftime('%Y-%m-%d')
 
         if self.start_date >= self.end_date:
-            raise ValueError('Time between start date and end date must be more than 1 month.')
+            raise ValueError('Time between start date and end date must be more than 1 day.')
 
         # Divide each row by the one above it to find percent change
-        monthly_change = prices / prices.shift(1)
+        daily_change = prices / prices.shift(1)
 
         # Initialize starting values
-        hist = pd.DataFrame(index=monthly_change.index, columns=self.tickers + ['Total', 'Drawdown'])
+        hist = pd.DataFrame(index=daily_change.index, columns=self.tickers + ['Total', 'Drawdown'])
         for ticker in self.tickers:
             hist.at[self.start_date, ticker] = self.allocation[ticker] * self.start_val
         hist.at[self.start_date, 'Total'] = self.start_val
@@ -124,24 +124,23 @@ class Backtest(object):
 
         # Download inflation data if necessary
         inflation = web.DataReader('CPIAUCSL', 'fred', self.start_date, self.end_date) if adj_inflation else None
+        inflation = _interpolate_inflation(hist.index, inflation) if adj_inflation else None
 
         # Populate portfolio history
-        prev_date = self.start_date
+        prev_date = pd.to_datetime(self.start_date)
         max_total = self.start_val
-        for date, row in monthly_change.iloc[1:].iterrows():
+        for date, row in daily_change.iloc[1:].iterrows():
             for ticker in self.tickers:
                 hist.at[date, ticker] = hist.at[prev_date, ticker] * row[ticker]
 
                 # Adjust for inflation if necessary
-                if adj_inflation and date in inflation.index:
+                if adj_inflation and prev_date in inflation.index and date in inflation.index:
                     hist.at[date, ticker] *= inflation.at[prev_date, 'CPIAUCSL'] / inflation.at[date, 'CPIAUCSL']
 
             hist.at[date, 'Total'] = hist.loc[date].sum()
 
             # Rebalancing
-            if (self.rebalance == 'm' or
-                    self.rebalance == 'q' and date.is_quarter_start or
-                    self.rebalance == 'y' and date.is_year_start):
+            if _is_rebalance_date(prev_date, date, self.rebalance):
                 _rebalance(hist, date, self.allocation)
 
             # Drawdowns
@@ -157,11 +156,11 @@ class Backtest(object):
         self.max_drawdown = min(hist['Drawdown'])
         self.end_val = hist.loc[self.end_date]['Total']
         self.cagr = _cagr(self.start_val, self.end_val, self.start_date, self.end_date)
-        self.std = np.std(hist['Total'].pct_change().dropna()) * (12 ** 0.5)
+        self.std = np.std(hist['Total'].pct_change().dropna()) * (252 ** 0.5)
 
         # Calculate excess return using 3-month T-Bill as risk-free return
-        tbill_return = yf.download('^IRX', interval='1mo', start=self.start_date, end=self.end_date,
-                                   progress=False)['Close'] * 0.01 / 12  # Don't forget to convert to monthly rate
+        tbill_return = yf.download('^IRX', interval='1d', start=self.start_date, end=self.end_date,
+                                   progress=False)['Close'] * 0.01 / 252  # Don't forget to convert to daily rate
         if adj_inflation:
             tbill_return -= inflation['CPIAUCSL'].pct_change()
 
@@ -171,7 +170,7 @@ class Backtest(object):
         self.sortino = _sortino(excess_return)
 
         # Calculate market correlation using S&P 500
-        market_history = yf.download('VFINX', interval='1mo', start=self.start_date,
+        market_history = yf.download('VFINX', interval='1d', start=self.start_date,
                                      progress=False)['Adj Close'].dropna().pct_change().dropna()
         df = pd.concat([portfolio_return, market_history], axis=1)
         self.correlation = df.corr().iloc[1][0]
@@ -185,20 +184,22 @@ class Backtest(object):
             A pandas.Series object containing the annualized rolling returns of every possible interval. The index value for
             each value corresponds to the end date of the interval it represents.
         """
+        days_in_interval = interval * 21
 
-        if interval >= len(self.hist.index):
+        if days_in_interval >= len(self.hist.index):
             raise ValueError('Interval must be shorter than the duration of the backtest.')
-        if interval <= 0:
+        if days_in_interval <= 0:
             raise ValueError('Interval must be at least 1 month long.')
 
         returns = []
 
-        for i in range(interval, len(self.hist.index)):
-            start_date = self.hist.index[i - interval].strftime('%Y-%m-%d')
+        for i in range(days_in_interval, len(self.hist.index)):
+            start_date = self.hist.index[i - days_in_interval].strftime('%Y-%m-%d')
             end_date = self.hist.index[i].strftime('%Y-%m-%d')
-            returns.append(_cagr(self.hist.iloc[i-interval]['Total'], self.hist.iloc[i]['Total'], start_date, end_date))
+            returns.append(_cagr(self.hist.iloc[i - days_in_interval]['Total'], self.hist.iloc[i]['Total'],
+                                 start_date, end_date))
 
-        return pd.Series(data=returns, index=self.hist.index[interval:])
+        return pd.Series(data=returns, index=self.hist.index[days_in_interval:])
 
     def __str__(self):
         return (
